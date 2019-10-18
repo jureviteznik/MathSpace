@@ -5,16 +5,18 @@ enum Screen{
 Screen onScreen;
 
 String skinMap;
-String[] skins = {"casino", "first"};
+String[] skins = {"casino", "first", "scarab"};
 int selectedSkinX;
 int selectedSkinY;
 
+PImage[] spaceships = new PImage[3];
 PImage spaceShip;
 PImage meteor;
 PImage stevilcnica;
 PImage select;
 PImage wrong;
-PImage bullet;
+PImage[] bulletANI_ = new PImage[0];
+ArrayList<PImage> bulletANI;
 
 PImage ena;
 PImage dva;
@@ -59,12 +61,32 @@ void setup(){
   selectedSkinX = 0;
   selectedSkinY = height/3;
   
-  spaceShip = loadImage(skinMap+"/space_ship.png");
+  spaceships[0] = loadImage(skinMap+"/space_ship1.png");
+  spaceships[1] = loadImage(skinMap+"/space_ship2.png");
+  spaceships[2] = loadImage(skinMap+"/space_ship3.png");
+  
+  spaceShip = spaceships[0];
   meteor = loadImage(skinMap+"/meteor.png");
   stevilcnica = loadImage(skinMap+"/select_circle.png");
   select = loadImage(skinMap+"/select.png");
   wrong = loadImage(skinMap+"/wrong.png");
-  bullet = loadImage(skinMap+"/bullet.png");
+  
+  bulletANI = new ArrayList<PImage>();
+  boolean fileExists = true;
+  int index = 1;
+  
+  
+  ////////////////
+  ///FIX TIS//////
+  ////////////////
+  while(true){
+    PImage bullet_image = loadImage(skinMap+"/bullet" + index + ".png");
+    if(bullet_image != null){
+      bulletANI.add(loadImage(skinMap+"/bullet" + index + ".png"));
+      index++;
+    }else
+      break;
+  }
   
   ena = loadImage(skinMap+"/1.png");
   dva = loadImage(skinMap+"/2.png");
@@ -89,13 +111,13 @@ void setup(){
   mozneStevke.append(8);
   mozneStevke.append(9);
   
-  lives = 3;
+  lives = 0;
   
   result = 0;
   meteorRadius = meteor.height/2;
   
   initialTime = millis();
-  interval = 3000; //3 sec
+  interval = 5000; //5 sec
 }
 
 void draw(){
@@ -297,22 +319,13 @@ void drawGameover(){
 void drawGame(){
   background(0);
   fill(255);
-  text(lives+"", 10,10);
-  
- //GAME OVER
- if(lives < 1){
-   onScreen = Screen.GAMEOVER;
- }
- 
   
   //spawn new meteors
   if(millis() - initialTime > interval){
     meteors.add(new Meteor(mozneStevke));
     initialTime = millis();
   }
-  
-   
-  
+
   //draw input numbers
   //MUST BE AFTER DRAW METEORS!!!!!!!!!!!!!!!!!!!!!!!!! (BUT NOT RN CUZ I NEED THE PICS)
   if(selected != null){
@@ -378,7 +391,13 @@ void drawGame(){
     Meteor m = meteors.get(i);
     m.update();
     if(m.hitShip()){
-      lives--;
+      lives++;
+      //GAME OVER
+       if(lives >= spaceships.length){
+         onScreen = Screen.GAMEOVER;
+       }else{
+         spaceShip = spaceships[lives];
+       }
       if(m == selected){
         selected = null;      
       }
@@ -560,7 +579,8 @@ void mouseMenu(){
 
 void mouseGameover(){
   meteors = new ArrayList<Meteor>();
-  lives = 3;
+  lives = 0;
+  spaceShip = spaceships[0];
   onScreen = Screen.MENU;
 }
 
@@ -615,7 +635,7 @@ void mouseGame(){
            result = 0;
            
          }else if(result > 10){
-           //if the entered number is bigger then 10 that means we entered 2 numbers and since the biggest number is 81 (9*9) if that is not the result, we reset the input
+           //we entered 2 number is the result is 10 or bigger, if we didnt get it we reset the result value to 0 cuz we missed it
            result = 0;
            
            selected.wrongTime = millis();
@@ -626,24 +646,26 @@ void mouseGame(){
          selected = null;
          result = 0;
        }
-  }
-   
-  for(int i = 0; i < meteors.size(); i++){
-     Meteor m = meteors.get(i);
-     mouseDistance = dist(mouseX, mouseY, m.posx, m.posy);
-     if(mouseDistance <= meteorRadius){
-        selected = m;
-     }
+  }else{
+    for(int i = 0; i < meteors.size(); i++){
+       Meteor m = meteors.get(i);
+       mouseDistance = dist(mouseX, mouseY, m.posx, m.posy);
+       if(mouseDistance <= meteorRadius/2){
+          selected = m;
+       }
+    }
   }
 }
 
 void changeSkin(){
-  spaceShip = loadImage(skinMap+"/space_ship.png");
+  spaceships[0] = loadImage(skinMap+"/space_ship1.png");
+  spaceships[1] = loadImage(skinMap+"/space_ship2.png");
+  spaceships[2] = loadImage(skinMap+"/space_ship3.png");
+  spaceShip = spaceships[0];
   meteor = loadImage(skinMap+"/meteor.png");
   stevilcnica = loadImage(skinMap+"/select_circle.png");
   select = loadImage(skinMap+"/select.png");
   wrong = loadImage(skinMap+"/wrong.png");
-  bullet = loadImage(skinMap+"/bullet.png");
   
   ena = loadImage(skinMap+"/1.png");
   dva = loadImage(skinMap+"/2.png");

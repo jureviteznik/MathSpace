@@ -4,14 +4,29 @@ class Bullet{
   
   float angle;
   
-  float speed = 50;
+  float speed = 25;
   
   Meteor goal;
+  
+  int animationTics = 0;
+  int animationDelay = 0;
+  
+  PImage bullet;
   
   //update and draw
   void update(){
     
     angle = atan2(goal.posy-posy, goal.posx-posx);
+    
+    if(animationDelay > 0){
+      animationDelay--;
+    }else{
+      animationDelay = 3;
+      int index = animationTics % bulletANI.size();
+      bullet = bulletANI.get(index);
+      animationTics++;
+    }
+    
     
     pushMatrix();
       translate(posx,posy);
@@ -33,7 +48,9 @@ class Bullet{
       meteors.remove(goal);
       bullets.remove(this);
     }
-    
+      
+    animationTics++;
+  
   }
   
   Bullet(Meteor m){
