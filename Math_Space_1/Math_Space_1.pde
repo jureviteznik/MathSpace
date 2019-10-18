@@ -61,42 +61,7 @@ void setup(){
   selectedSkinX = 0;
   selectedSkinY = height/3;
   
-  spaceships[0] = loadImage(skinMap+"/space_ship1.png");
-  spaceships[1] = loadImage(skinMap+"/space_ship2.png");
-  spaceships[2] = loadImage(skinMap+"/space_ship3.png");
-  
-  spaceShip = spaceships[0];
-  meteor = loadImage(skinMap+"/meteor.png");
-  stevilcnica = loadImage(skinMap+"/select_circle.png");
-  select = loadImage(skinMap+"/select.png");
-  wrong = loadImage(skinMap+"/wrong.png");
-  
-  bulletANI = new ArrayList<PImage>();
-  boolean fileExists = true;
-  int index = 1;
-  
-  
-  ////////////////
-  ///FIX TIS//////
-  ////////////////
-  while(true){
-    PImage bullet_image = loadImage(skinMap+"/bullet" + index + ".png");
-    if(bullet_image != null){
-      bulletANI.add(loadImage(skinMap+"/bullet" + index + ".png"));
-      index++;
-    }else
-      break;
-  }
-  
-  ena = loadImage(skinMap+"/1.png");
-  dva = loadImage(skinMap+"/2.png");
-  tri = loadImage(skinMap+"/3.png");
-  stiri = loadImage(skinMap+"/4.png");
-  pet = loadImage(skinMap+"/5.png");
-  sest = loadImage(skinMap+"/6.png");
-  sedem = loadImage(skinMap+"/7.png");
-  osem = loadImage(skinMap+"/8.png");
-  devet = loadImage(skinMap+"/9.png");
+  changeSkin();
   
   meteors = new ArrayList<Meteor>();
   bullets = new ArrayList<Bullet>();
@@ -676,4 +641,19 @@ void changeSkin(){
   sedem = loadImage(skinMap+"/7.png");
   osem = loadImage(skinMap+"/8.png");
   devet = loadImage(skinMap+"/9.png");
+  
+  ////////////////
+  ///FIX TIS//////
+  ////////////////
+  bulletANI = new ArrayList<PImage>();
+  int index = 1;
+  
+  while(true){
+    PImage bullet_image = loadImage(skinMap+"/bullet" + index + ".png");
+    if(bullet_image != null){
+      bulletANI.add(loadImage(skinMap+"/bullet" + index + ".png"));
+      index++;
+    }else
+      break;
+  }
 }
