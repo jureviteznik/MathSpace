@@ -6,8 +6,15 @@ Screen onScreen;
 
 String skinMap;
 String[] skins = {"casino", "first", "scarab"};
-int selectedSkinX;
-int selectedSkinY;
+String[] extra = {"Tips", "Help\n(TODO)","2","3","4","5"};
+String[] modes = {"Marathon", "Sprint", "Turnado"};
+String hs = "./Highscores.txt";
+
+Game gameMode;
+Boolean displayTips;
+int selectedRectX;
+int selectedRectY;
+int selectedModeX;
 
 PImage[] spaceships = new PImage[3];
 PImage spaceShip;
@@ -40,6 +47,7 @@ ArrayList<Bullet> bullets;
 int result;
 
 int lives;
+int numOfDestroied;
 
 float distX;
 float distY;
@@ -50,6 +58,50 @@ int initialTime;
 //spawn interval
 int interval;
 
+int[][] getHighscores(){
+  int[][] highScores = new int[modes.length][3];
+  try{
+    BufferedReader scoreReader = createReader(hs);
+    for(int i = 0; i < modes.length; i++){
+        scoreReader.readLine(); //gameMode name
+        highScores[i][0] = Integer.parseInt(scoreReader.readLine());
+        highScores[i][1] = Integer.parseInt(scoreReader.readLine());
+        highScores[i][2] = Integer.parseInt(scoreReader.readLine());
+    }
+    scoreReader.close();
+  } catch (IOException e) {
+    e.printStackTrace();
+  }
+  
+  return highScores;
+}
+
+void editHighscore(int value, Game gm){
+  String gameMode;
+  if(gm instanceof Marathon)  gameMode = "Marathon";
+  else if(gm instanceof Sprint)  gameMode = "Sprint";
+  else if(gm instanceof Turnado)  gameMode = "Turnado";
+  else{
+    print("ERROR IN EDIT HIGHSCORE! GAMEMODE NOT ADDED!");
+    return;
+  }
+ 
+  String[] lines = loadStrings(hs);
+  for(int i  = 0; i < lines.length; i++){
+    if(lines[i].equals(gameMode)){
+      for(int j = 1; j < 4; j++){
+        int score = Integer.parseInt(lines[i+j]);
+        if(value > score){
+          lines[i+j] = value+"";
+          value = score;
+        }
+      }
+      break;
+    }
+  }
+  saveStrings(hs, lines);
+}
+
 void setup(){
   size(1600,900);
   frameRate(30);
@@ -58,8 +110,11 @@ void setup(){
   onScreen = Screen.MENU;
   
   skinMap = "Pics/casino";
-  selectedSkinX = 0;
-  selectedSkinY = height/3;
+  gameMode = new Marathon();
+  selectedRectX = 0;
+  selectedRectY = height/3;
+  selectedModeX = 0;
+  displayTips = false;
   
   changeSkin();
   
@@ -77,6 +132,7 @@ void setup(){
   mozneStevke.append(9);
   
   lives = 0;
+  numOfDestroied = 0;
   
   result = 0;
   meteorRadius = meteor.height/2;
@@ -92,11 +148,11 @@ void draw(){
       break;
     }
     case GAME:{
-      drawGame();
+      gameMode.drawGame();
       break;
     }
     case GAMEOVER:{
-      drawGameover();
+      gameMode.drawGameover();
       break;
     }
   }
@@ -243,168 +299,97 @@ void drawMenu(){
   
   strokeWeight(3);
   line(0, height/2, width/2, height/2);
-  line(width/10, height/3, width/10, 2*height/3);
-  line(2*width/10, height/3, 2*width/10, 2*height/3);
-  line(3*width/10, height/3, 3*width/10, 2*height/3);
-  line(4*width/10, height/3, 4*width/10, 2*height/3);
+  line(0, 5*height/6, width/2, 5*height/6);
+  line(width/10, height/3, width/10, height);
+  line(2*width/10, height/3, 2*width/10, height);
+  line(3*width/10, height/3, 3*width/10, height);
+  line(4*width/10, height/3, 4*width/10, height);
   
   
   //draw skin stuff
   noFill();
   stroke(204, 102, 0);
   strokeWeight(5);
-  rect(selectedSkinX, selectedSkinY, width/10, height/6);
+  rect(selectedRectX, selectedRectY, width/10, height/6);
   
   textSize(32);
   textAlign(CENTER);
+  
+  //skin selection
+  fill(255, 204, 0);
   int index = 0;
-  for(int j = height/3; j < height; j += height/3){
+  for(int j = height/3; j < 2*height/3; j += height/6){
     for(int i = 0;  i < width/2; i += width/10){
       try{
         text(skins[index], i + width/20, j + height/12);
       }catch(Exception e){}
       index++;
     }
+    
+  }
+  //extra
+  fill(255, 0, 0);
+  index = 0;
+  for(int i = 0;  i < width/2; i += width/10){
+    try{
+      text(extra[index], i + width/20, 2*height/3 + height/12);
+    }catch(Exception e){}
+    index++;
   }
   
-  //game selection
+  //game selection/game modes
+  noFill();
+  stroke(204, 255, 0);
+  strokeWeight(5);
+  rect(selectedModeX, 5*height/6, width/10, height/6);
   
+  fill(0, 255, 0);
+  index = 0;
+  for(int i = 0;  i < width/2; i += width/10){
+    try{
+      text(modes[index], i + width/20, 5*height/6 + height/12);
+    }catch(Exception e){}
+    index++;
+  }
   
   //play
+  fill(255,255,255);
   text("PLAY", width/4,height/6);
   
+  if(displayTips){
+    displayTips();
+  }
+  
 }
 
-void drawGameover(){
-   background(0);
-   textSize(width/10);
-   text("GAME OVER", 100 ,height/2);
-};
 
-void drawGame(){
-  background(0);
-  fill(255);
-  
-  //spawn new meteors
-  if(millis() - initialTime > interval){
-    meteors.add(new Meteor(mozneStevke));
-    initialTime = millis();
-  }
-
-  //draw input numbers
-  //MUST BE AFTER DRAW METEORS!!!!!!!!!!!!!!!!!!!!!!!!! (BUT NOT RN CUZ I NEED THE PICS)
-  if(selected != null){
-    float angle = atan2(mouseY-selected.posy, mouseX-selected.posx);
-    pushMatrix();
-      translate(selected.posx, selected.posy);
-      imageMode(CENTER);
-      image(stevilcnica, 0, 0);
-      
-      if(angle > 0 && angle < PI/5){
-           //3
-           angle = PI/10;
-         }else if(angle > PI/5 && angle < 2*PI/5){
-           //4
-           angle = 3*PI/10;
-         }else if(angle > 2*PI/5 && angle < 3*PI/5){
-           //5
-           angle = 5*PI/10;
-         }else if(angle > 3*PI/5 && angle < 4*PI/5){
-           //6
-           angle = 7*PI/10;
-         }else if(angle > 4*PI/5 && angle < 5*PI/5){
-           //7
-           angle = 9*PI/10;
-         }else if(angle > -5*PI/5 && angle < -4*PI/5){
-           //8
-           angle = -9*PI/10;
-         }else if(angle > -4*PI/5 && angle < -3*PI/5){
-           //9
-           angle = -7*PI/10;
-         }else if(angle > -3*PI/5 && angle < -2*PI/5){
-           //0
-           angle = -5*PI/10;
-         }else if(angle > -2*PI/5 && angle < -PI/5){
-           //1
-           angle = -3*PI/10;
-         }else if(angle > -PI/5 && angle < 0){
-           //2
-           angle = -PI/10;
-         }
-         
-      rotate(angle + PI/2);
-      translate(0,-100);
-      image(select,0,0);
-    popMatrix();
-    
-    shipAngle = atan2(selected.posy-height/2, selected.posx-width/2);
-  }else{
-    shipAngle = atan2(mouseY-height/2, mouseX-width/2);
-  }
-  
-  //draw spaceship
-  
-  pushMatrix();
-    translate(width/2, height/2);
-    rotate(shipAngle + PI/2);
-    imageMode(CENTER);
-    image(spaceShip, 0, 0);
-  popMatrix();
-  
-  //update/draw meteors
-  for(int i = 0; i < meteors.size(); i++){
-    Meteor m = meteors.get(i);
-    m.update();
-    if(m.hitShip()){
-      lives++;
-      //GAME OVER
-       if(lives >= spaceships.length){
-         onScreen = Screen.GAMEOVER;
-       }else{
-         spaceShip = spaceships[lives];
-       }
-      if(m == selected){
-        selected = null;      
-      }
-      meteors.remove(i);
-    }
-  }
-  
-  //update/draw bullets
-  for(int i = 0; i < bullets.size(); i++){
-    Bullet b = bullets.get(i);
-    b.update();
-  }
-}
 
 void mouseMenu(){
-  //game selection
-  //TODO
   
   //skin selection
   if(mouseX < width/2 && mouseY < 2*height/3 && mouseY > height/3){
     int sel = 0;
     
     if(mouseX < width/10){
-      selectedSkinX = 0;
+      selectedRectX = 0;
       sel = 0;
     }else if(mouseX < 2*width/10){
-      selectedSkinX = width/10;
+      selectedRectX = width/10;
       sel = 1;
     }else if(mouseX < 3*width/10){
-      selectedSkinX = 2*width/10;
+      selectedRectX = 2*width/10;
       sel = 2;
     }else if(mouseX < 4*width/10){
-      selectedSkinX = 3*width/10;
+      selectedRectX = 3*width/10;
       sel = 3;
     }else if(mouseX < 5*width/10){
-      selectedSkinX = 4*width/10;
+      selectedRectX = 4*width/10;
       sel = 4;
     }
     
-    if(mouseY < height/2)  selectedSkinY = height/3;
+    if(mouseY < height/2)  selectedRectY = height/3;
     else{
-      selectedSkinY = height/2;
+      selectedRectY = height/2;
       sel += 5;
     }
     
@@ -415,6 +400,65 @@ void mouseMenu(){
     }
     
     changeSkin();
+    
+  }
+  
+  //extra selection
+  else if(mouseX < width/2 && mouseY <   height
+                           && mouseY > 2*height/3){
+   
+    if(mouseY < 5*height/6){
+      if(mouseX < width/10){
+        selectedRectX = 0;
+        displayTips = !displayTips;
+      }else if(mouseX < 2*width/10){
+        selectedRectX = width/10;
+        //TODO
+      }else if(mouseX < 3*width/10){
+        selectedRectX = 2*width/10;
+        //TODO
+      }else if(mouseX < 4*width/10){
+        selectedRectX = 3*width/10;
+        //TODO
+      }else if(mouseX < 5*width/10){
+        selectedRectX = 4*width/10;
+       
+      }
+   //game mode selection
+    }else{
+      if(mouseX < width/10){
+        //MARATHON
+        selectedModeX = 0;
+        selectedRectX = 0;
+        gameMode = new Marathon();
+        
+      }else if(mouseX < 2*width/10){
+        //SPRINT
+        selectedModeX = width/10;
+        selectedRectX = width/10;
+        gameMode = new Sprint();
+        
+      }else if(mouseX < 3*width/10){
+        selectedModeX = 2*width/10;
+        selectedRectX = 2*width/10;
+        gameMode = new Turnado();
+        
+      }else if(mouseX < 4*width/10){
+        selectedModeX = 3*width/10;
+        selectedRectX = 3*width/10;
+        //TODO
+      }else if(mouseX < 5*width/10){
+        selectedModeX = 4*width/10;
+        selectedRectX = 4*width/10;
+       
+      }
+    }
+    
+    
+    if(mouseY < 5*height/6)  selectedRectY = 2*height/3;
+    else{
+      selectedRectY = 5*height/6;
+    }
     
   }
   
@@ -543,10 +587,14 @@ void mouseMenu(){
 }
 
 void mouseGameover(){
+  editHighscore(numOfDestroied, gameMode);
+  numOfDestroied = 0;
+  
   meteors = new ArrayList<Meteor>();
   lives = 0;
   spaceShip = spaceships[0];
   onScreen = Screen.MENU;
+  
 }
 
 void mouseGame(){
@@ -588,9 +636,10 @@ void mouseGame(){
            result = result*10 + 2;
          }
          
+         int result2 = result % 10;
          
          //CHECK IF THE RESULT IS CORRECT
-         if(selected.rezultat == result){
+         if(selected.rezultat == result || selected.rezultat == result2){
            
            Bullet b = new Bullet(selected);
            bullets.add(b);
@@ -622,6 +671,45 @@ void mouseGame(){
   }
 }
 
+void displayTips(){
+  
+  String tips = "1 * x:\n"+
+    "1 * 1 = 1\n"+
+    "1 * 2 = 2\n"+
+    "1 * 3 = 3\n"+
+    "1 * 4 = 4\n"+
+    "...\n"+
+    "\n"+
+    "9 * x\n"+
+    "This one is eazy\n" +
+    "once you know that the digits\n"+
+    "in the answer always add up to 9:\n"+
+    "1*9 = 9\n"+
+    "2*9 = 18 -> 1+8 = 9\n"+
+    "3*9 = 27 -> 2+7 = 9\n"+
+    "8*9 = 72 -> 7+2 = 9\n"+
+    "...\n"+
+    "another trick is to multiply the number by 10\n"+ 
+    "and then just subtract the same number\n"+
+    "example:\n"+
+    "4 * 9 = 10 * 4 - 4 = 40 - 4 = 36\n"+
+    "6 * 9 = 60 - 6 = 54\n"+
+    "\n"+
+    "\n"+
+    "\n"+
+    "\n"+
+    "\n"+
+    "\n"+
+    "\n"+
+    "\n"+
+    "\n";
+    
+    textSize(22);
+    textAlign(LEFT);
+    text(tips,width/2 + 40, 40);
+   
+}
+
 void changeSkin(){
   spaceships[0] = loadImage(skinMap+"/space_ship1.png");
   spaceships[1] = loadImage(skinMap+"/space_ship2.png");
@@ -643,7 +731,7 @@ void changeSkin(){
   devet = loadImage(skinMap+"/9.png");
   
   ////////////////
-  ///FIX TIS//////
+  ///FIX THIS/////
   ////////////////
   bulletANI = new ArrayList<PImage>();
   int index = 1;

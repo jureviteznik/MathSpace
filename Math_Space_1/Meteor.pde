@@ -60,8 +60,10 @@ class Meteor{
     return false;
   }
   
-  //nubers[] is array of numbers we can select
-  Meteor(IntList numbers){
+  // nubers[] is array of numbers we can select
+  // aMin aMax - min and max number for change of angle
+  // rMin rMax - min and max number for change of radius
+  Meteor(IntList numbers, float aMin, float aMax, float rMin, float rMax){
     
     wrongTime = 0;
     
@@ -83,8 +85,8 @@ class Meteor{
       }
     }
     
-    da = random(0.002,0.008);
-    dr = random(0.5, 1);
+    da = random(aMin, aMax);
+    dr = random(rMin, rMax);
     
     posx = radius * cos(angle) + width/2;
     posy = radius * sin(angle) + height/2;

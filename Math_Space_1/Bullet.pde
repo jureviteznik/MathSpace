@@ -47,6 +47,7 @@ class Bullet{
     if(mouseDistance <= meteorRadius){ 
       meteors.remove(goal);
       bullets.remove(this);
+      numOfDestroied++;
     }
       
     animationTics++;
