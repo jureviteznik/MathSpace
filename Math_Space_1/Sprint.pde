@@ -13,15 +13,10 @@ class Sprint implements Game{
     rMin = 0.7;
     
     da = 0.0001;
-    dr = 0.03;
+    dr = 0.05;
   }
   
-  public void drawGameover(){
-    background(0);
-    textSize(width/10);
-    textAlign(CENTER, CENTER);
-    text("GAME OVER", width/2 ,height/2);
-  };
+ 
  
   public void drawGame(){
     background(0);
@@ -42,6 +37,43 @@ class Sprint implements Game{
     
     text("Score: " + numOfDestroied, 0, 0);
               
+    
+    //draw spaceship
+    
+    pushMatrix();
+      translate(width/2, height/2);
+      rotate(shipAngle + PI/2);
+      imageMode(CENTER);
+      image(spaceShip, 0, 0);
+       
+      if(inputNum1 != null){
+          translate(0,-spaceShip.height/2);
+          image(inputNum1, 0, -15, 30, 30);
+      }
+      
+      
+    popMatrix();
+    
+    //update/draw meteors
+    for(int i = 0; i < meteors.size(); i++){
+      Meteor m = meteors.get(i);
+      if(m != selected) m.update();
+      
+      if(m.hitShip()){
+        lives++;
+        //GAME OVER
+         if(lives >= spaceships.length){
+           onScreen = Screen.GAMEOVER;
+         }else{
+           spaceShip = spaceships[lives];
+         }
+        if(m == selected){
+          selected = null;      
+        }
+        meteors.remove(i);
+      }
+    }
+    
     
     //draw input circle
     if(selected != null){
@@ -92,34 +124,8 @@ class Sprint implements Game{
     }else{
       shipAngle = atan2(mouseY-height/2, mouseX-width/2);
     }
+    if(selected != null)  selected.update();
     
-    //draw spaceship
-    
-    pushMatrix();
-      translate(width/2, height/2);
-      rotate(shipAngle + PI/2);
-      imageMode(CENTER);
-      image(spaceShip, 0, 0);
-    popMatrix();
-    
-    //update/draw meteors
-    for(int i = 0; i < meteors.size(); i++){
-      Meteor m = meteors.get(i);
-      m.update();
-      if(m.hitShip()){
-        lives++;
-        //GAME OVER
-         if(lives >= spaceships.length){
-           onScreen = Screen.GAMEOVER;
-         }else{
-           spaceShip = spaceships[lives];
-         }
-        if(m == selected){
-          selected = null;      
-        }
-        meteors.remove(i);
-      }
-    }
     
     //update/draw bullets
     for(int i = 0; i < bullets.size(); i++){

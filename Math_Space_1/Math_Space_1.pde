@@ -1,3 +1,5 @@
+import processing.sound.*;
+
 enum Screen{
     MENU, GAME, GAMEOVER
 };
@@ -5,19 +7,35 @@ enum Screen{
 Screen onScreen;
 
 String skinMap;
-String[] skins = {"casino", "first", "scarab"};
-String[] extra = {"Tips", "Help\n(TODO)","2","3","4","5"};
-String[] modes = {"Marathon", "Sprint", "Turnado"};
-String hs = "./Highscores.txt";
+String[] skins = {"scarab", "doodle","buzz","school","pokemon", "casino", "first"};
+String[] modes = {"Marathon", "Sprint", "Turnado", "Twirl"};
+String[] modeDescription = {
+    //marathon 
+    "After 10 slutions you level up and equations spawn faster!",
+    //Sprint
+    "Each slutions speeds the game up!",
+    //Turnado
+    "Spinning gets faster and faster!",
+    //Twirl
+    "Fisrt only 1 equation will apear, then 2, then 3,.. and so on!"
+  };
 
 Game gameMode;
-Boolean displayTips;
 int selectedRectX;
 int selectedRectY;
 int selectedModeX;
 
+SoundFile backgroundMusic;
+SoundFile wrongSound;
+SoundFile correctSound;
+SoundFile shipHitSound;
+
+
 PImage[] spaceships = new PImage[3];
 PImage spaceShip;
+PImage inputNum1;
+PImage inputNum2;
+
 PImage meteor;
 PImage stevilcnica;
 PImage select;
@@ -25,6 +43,7 @@ PImage wrong;
 PImage[] bulletANI_ = new PImage[0];
 ArrayList<PImage> bulletANI;
 
+PImage nic;
 PImage ena;
 PImage dva;
 PImage tri;
@@ -48,6 +67,7 @@ int result;
 
 int lives;
 int numOfDestroied;
+int numOfMissed;
 
 float distX;
 float distY;
@@ -58,49 +78,6 @@ int initialTime;
 //spawn interval
 int interval;
 
-int[][] getHighscores(){
-  int[][] highScores = new int[modes.length][3];
-  try{
-    BufferedReader scoreReader = createReader(hs);
-    for(int i = 0; i < modes.length; i++){
-        scoreReader.readLine(); //gameMode name
-        highScores[i][0] = Integer.parseInt(scoreReader.readLine());
-        highScores[i][1] = Integer.parseInt(scoreReader.readLine());
-        highScores[i][2] = Integer.parseInt(scoreReader.readLine());
-    }
-    scoreReader.close();
-  } catch (IOException e) {
-    e.printStackTrace();
-  }
-  
-  return highScores;
-}
-
-void editHighscore(int value, Game gm){
-  String gameMode;
-  if(gm instanceof Marathon)  gameMode = "Marathon";
-  else if(gm instanceof Sprint)  gameMode = "Sprint";
-  else if(gm instanceof Turnado)  gameMode = "Turnado";
-  else{
-    print("ERROR IN EDIT HIGHSCORE! GAMEMODE NOT ADDED!");
-    return;
-  }
- 
-  String[] lines = loadStrings(hs);
-  for(int i  = 0; i < lines.length; i++){
-    if(lines[i].equals(gameMode)){
-      for(int j = 1; j < 4; j++){
-        int score = Integer.parseInt(lines[i+j]);
-        if(value > score){
-          lines[i+j] = value+"";
-          value = score;
-        }
-      }
-      break;
-    }
-  }
-  saveStrings(hs, lines);
-}
 
 void setup(){
   size(1600,900);
@@ -109,14 +86,21 @@ void setup(){
   
   onScreen = Screen.MENU;
   
-  skinMap = "Pics/casino";
+  skinMap = "Pics/scarab";
   gameMode = new Marathon();
   selectedRectX = 0;
   selectedRectY = height/3;
   selectedModeX = 0;
-  displayTips = false;
   
   changeSkin();
+  
+  backgroundMusic = new SoundFile(this, "Sounds/background1.wav");
+  backgroundMusic.loop();
+  
+  wrongSound = new SoundFile(this, "Sounds/wrong1.mp3");
+  correctSound = new SoundFile(this, "Sounds/correct1.wav");
+  shipHitSound = new SoundFile(this, "Sounds/shipHit1.wav");
+
   
   meteors = new ArrayList<Meteor>();
   bullets = new ArrayList<Bullet>();
@@ -133,6 +117,7 @@ void setup(){
   
   lives = 0;
   numOfDestroied = 0;
+  numOfMissed = 0;
   
   result = 0;
   meteorRadius = meteor.height/2;
@@ -152,7 +137,7 @@ void draw(){
       break;
     }
     case GAMEOVER:{
-      gameMode.drawGameover();
+      drawGameover();
       break;
     }
   }
@@ -175,6 +160,19 @@ void mousePressed(){
   }
  
 }
+
+public void drawGameover(){
+    background(0);
+    textSize(width/10);
+    textAlign(CENTER, CENTER);
+    text("GAME OVER", width/2 ,height/2);
+    
+    textSize(width/20);
+    text("Correct: " + numOfDestroied, width/2 ,height - height/3);
+    text("Wrong: " + numOfMissed, width/2 ,height - height/4);
+    
+  };
+
 
 void drawMenu(){
   background(0);
@@ -300,10 +298,10 @@ void drawMenu(){
   strokeWeight(3);
   line(0, height/2, width/2, height/2);
   line(0, 5*height/6, width/2, 5*height/6);
-  line(width/10, height/3, width/10, height);
-  line(2*width/10, height/3, 2*width/10, height);
-  line(3*width/10, height/3, 3*width/10, height);
-  line(4*width/10, height/3, 4*width/10, height);
+  line(width/10, height/3, width/10, 5*height/6);
+  line(2*width/10, height/3, 2*width/10, 5*height/6);
+  line(3*width/10, height/3, 3*width/10, 5*height/6);
+  line(4*width/10, height/3, 4*width/10, 5*height/6);
   
   
   //draw skin stuff
@@ -327,12 +325,12 @@ void drawMenu(){
     }
     
   }
-  //extra
-  fill(255, 0, 0);
+  //mode selection
+  fill(0, 255, 0);
   index = 0;
   for(int i = 0;  i < width/2; i += width/10){
     try{
-      text(extra[index], i + width/20, 2*height/3 + height/12);
+      text(modes[index], i + width/20, 2*height/3 + height/12);
     }catch(Exception e){}
     index++;
   }
@@ -341,24 +339,33 @@ void drawMenu(){
   noFill();
   stroke(204, 255, 0);
   strokeWeight(5);
-  rect(selectedModeX, 5*height/6, width/10, height/6);
+  rect(selectedModeX, 4*height/6, width/10, height/6);
   
-  fill(0, 255, 0);
   index = 0;
+  if(gameMode instanceof Marathon){
+      index = 0;
+  }else if(gameMode instanceof Sprint){
+    index = 1;
+  }else if(gameMode instanceof Turnado){
+    index = 2;
+  }else if(gameMode instanceof Twirl){
+    index = 3;
+  }
+  fill(255,0, 0);
+  text(modeDescription[index], 0, 21*height/24, width/2, height);
+  /*
   for(int i = 0;  i < width/2; i += width/10){
     try{
       text(modes[index], i + width/20, 5*height/6 + height/12);
     }catch(Exception e){}
     index++;
   }
+  */
   
-  //play
+  //play button
   fill(255,255,255);
   text("PLAY", width/4,height/6);
   
-  if(displayTips){
-    displayTips();
-  }
   
 }
 
@@ -407,25 +414,8 @@ void mouseMenu(){
   else if(mouseX < width/2 && mouseY <   height
                            && mouseY > 2*height/3){
    
-    if(mouseY < 5*height/6){
-      if(mouseX < width/10){
-        selectedRectX = 0;
-        displayTips = !displayTips;
-      }else if(mouseX < 2*width/10){
-        selectedRectX = width/10;
-        //TODO
-      }else if(mouseX < 3*width/10){
-        selectedRectX = 2*width/10;
-        //TODO
-      }else if(mouseX < 4*width/10){
-        selectedRectX = 3*width/10;
-        //TODO
-      }else if(mouseX < 5*width/10){
-        selectedRectX = 4*width/10;
-       
-      }
    //game mode selection
-    }else{
+    if(mouseY < 5*height/6){
       if(mouseX < width/10){
         //MARATHON
         selectedModeX = 0;
@@ -446,12 +436,14 @@ void mouseMenu(){
       }else if(mouseX < 4*width/10){
         selectedModeX = 3*width/10;
         selectedRectX = 3*width/10;
-        //TODO
+        gameMode = new Twirl();
       }else if(mouseX < 5*width/10){
         selectedModeX = 4*width/10;
         selectedRectX = 4*width/10;
        
       }
+    }else{
+      
     }
     
     
@@ -587,9 +579,8 @@ void mouseMenu(){
 }
 
 void mouseGameover(){
-  editHighscore(numOfDestroied, gameMode);
   numOfDestroied = 0;
-  
+  numOfMissed = 0;
   meteors = new ArrayList<Meteor>();
   lives = 0;
   spaceShip = spaceships[0];
@@ -607,51 +598,77 @@ void mouseGame(){
          if(angle > 0 && angle < PI/5){
            //3
            result = result*10 + 3;
+           if(inputNum1 == null) inputNum1 = tri;
+           else inputNum2 = tri;
          }else if(angle > PI/5 && angle < 2*PI/5){
            //4
            result = result*10 + 4;
+           if(inputNum1 == null) inputNum1 = stiri;
+           else inputNum2 = stiri;
          }else if(angle > 2*PI/5 && angle < 3*PI/5){
            //5
            result = result*10 + 5;
+           if(inputNum1 == null) inputNum1 = pet;
+           else inputNum2 = pet;
          }else if(angle > 3*PI/5 && angle < 4*PI/5){
            //6
            result = result*10 + 6;
+           if(inputNum1 == null) inputNum1 = sest;
+           else inputNum2 = sest;
          }else if(angle > 4*PI/5 && angle < 5*PI/5){
            //7
            result = result*10 + 7;
+           if(inputNum1 == null) inputNum1 = sedem;
+           else inputNum2 = sedem;
          }else if(angle > -5*PI/5 && angle < -4*PI/5){
            //8
            result = result*10 + 8;
+           if(inputNum1 == null) inputNum1 = osem;
+           else inputNum2 = osem;
          }else if(angle > -4*PI/5 && angle < -3*PI/5){
            //9
            result = result*10 + 9;
+           if(inputNum1 == null) inputNum1 = devet;
+           else inputNum2 = devet;
          }else if(angle > -3*PI/5 && angle < -2*PI/5){
            //0
            result = result*10 + 0;
+           if(inputNum1 == null) inputNum1 = nic;
+           else inputNum2 = nic;
          }else if(angle > -2*PI/5 && angle < -PI/5){
            //1
            result = result*10 + 1;
+           if(inputNum1 == null) inputNum1 = ena;
+           else inputNum2 = ena;
          }else if(angle > -PI/5 && angle < 0){
            //2
            result = result*10 + 2;
+           if(inputNum1 == null) inputNum1 = dva;
+           else inputNum2 = dva;
          }
          
          int result2 = result % 10;
          
          //CHECK IF THE RESULT IS CORRECT
          if(selected.rezultat == result || selected.rezultat == result2){
+           correctSound.play();
            
-           Bullet b = new Bullet(selected);
+           Bullet b = new Bullet(selected, inputNum1, inputNum2);
            bullets.add(b);
-          
+           
            //meteors.remove(selected);
            selected = null;
            result = 0;
+           inputNum1 = null;
+           inputNum2 = null;
            
          }else if(result > 10){
            //we entered 2 number is the result is 10 or bigger, if we didnt get it we reset the result value to 0 cuz we missed it
+           wrongSound.play();
            result = 0;
-           
+           inputNum1 = null;
+           inputNum2 = null;
+           numOfMissed++;
            selected.wrongTime = millis();
          }  
          
@@ -659,6 +676,8 @@ void mouseGame(){
        }else{
          selected = null;
          result = 0;
+         inputNum1 = null;
+         inputNum2 = null;
        }
   }else{
     for(int i = 0; i < meteors.size(); i++){
@@ -671,44 +690,6 @@ void mouseGame(){
   }
 }
 
-void displayTips(){
-  
-  String tips = "1 * x:\n"+
-    "1 * 1 = 1\n"+
-    "1 * 2 = 2\n"+
-    "1 * 3 = 3\n"+
-    "1 * 4 = 4\n"+
-    "...\n"+
-    "\n"+
-    "9 * x\n"+
-    "This one is eazy\n" +
-    "once you know that the digits\n"+
-    "in the answer always add up to 9:\n"+
-    "1*9 = 9\n"+
-    "2*9 = 18 -> 1+8 = 9\n"+
-    "3*9 = 27 -> 2+7 = 9\n"+
-    "8*9 = 72 -> 7+2 = 9\n"+
-    "...\n"+
-    "another trick is to multiply the number by 10\n"+ 
-    "and then just subtract the same number\n"+
-    "example:\n"+
-    "4 * 9 = 10 * 4 - 4 = 40 - 4 = 36\n"+
-    "6 * 9 = 60 - 6 = 54\n"+
-    "\n"+
-    "\n"+
-    "\n"+
-    "\n"+
-    "\n"+
-    "\n"+
-    "\n"+
-    "\n"+
-    "\n";
-    
-    textSize(22);
-    textAlign(LEFT);
-    text(tips,width/2 + 40, 40);
-   
-}
 
 void changeSkin(){
   spaceships[0] = loadImage(skinMap+"/space_ship1.png");
@@ -720,6 +701,7 @@ void changeSkin(){
   select = loadImage(skinMap+"/select.png");
   wrong = loadImage(skinMap+"/wrong.png");
   
+  nic = loadImage(skinMap+"/0.png");
   ena = loadImage(skinMap+"/1.png");
   dva = loadImage(skinMap+"/2.png");
   tri = loadImage(skinMap+"/3.png");
@@ -730,18 +712,4 @@ void changeSkin(){
   osem = loadImage(skinMap+"/8.png");
   devet = loadImage(skinMap+"/9.png");
   
-  ////////////////
-  ///FIX THIS/////
-  ////////////////
-  bulletANI = new ArrayList<PImage>();
-  int index = 1;
-  
-  while(true){
-    PImage bullet_image = loadImage(skinMap+"/bullet" + index + ".png");
-    if(bullet_image != null){
-      bulletANI.add(loadImage(skinMap+"/bullet" + index + ".png"));
-      index++;
-    }else
-      break;
-  }
 }

@@ -26,6 +26,7 @@ class Meteor{
       translate(posx,posy);
       imageMode(CENTER);
       image(meteor, 0, 0,100,100);
+
     popMatrix();
     
     //draw numbers inside the meteor
@@ -35,6 +36,9 @@ class Meteor{
       image(st1, 0, 0, 30, 30);
       translate(32,0);
       image(st2, 0, 0, 30, 30);
+      translate(-16,0);
+      image(wrong,0,0,15,15);
+      
     popMatrix();
     
     if(millis() - wrongTime < 500){
@@ -55,6 +59,7 @@ class Meteor{
   
   boolean hitShip(){
     if(radius < spaceShip.height){
+      shipHitSound.play();
       return true;
     }
     return false;

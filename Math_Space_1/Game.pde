@@ -1,6 +1,5 @@
 interface Game{
   void drawGame();
-  void drawGameover();
 }
 
 /*

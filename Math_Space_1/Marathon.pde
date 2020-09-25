@@ -8,8 +8,8 @@ class Marathon implements Game{
   
   Marathon(){
     prevNumOfDestroied = 0;
-    speed = 7300; //start with 7.3 seconds
-    speedDecrese = 700; // on level up decrese by 0.7 sec, 1 sec respawn time at level 10
+    speed = 10000; //start with 10 seconds
+    speedDecrese = 1000; // on level up decrese by 1 sec, 1 sec respawn time at level 10
     level = 1;
     aMax = 0.008;
     aMin = 0.002;
@@ -17,12 +17,7 @@ class Marathon implements Game{
     rMin = 0.7;
   }
   
-  public void drawGameover(){
-    background(0);
-    textSize(width/10);
-    textAlign(CENTER, CENTER);
-    text("GAME OVER", width/2 ,height/2);
-  };
+
  
   public void drawGame(){
     background(0);
@@ -52,6 +47,43 @@ class Marathon implements Game{
       text("Level: 10(max)", 0, 0);
       text("Next Level: inf.", 0, 35);
     }            
+    
+    //draw spaceship
+    
+    pushMatrix();
+      translate(width/2, height/2);
+      rotate(shipAngle + PI/2);
+      imageMode(CENTER);
+      image(spaceShip, 0, 0);
+       
+      if(inputNum1 != null){
+          translate(0,-spaceShip.height/2);
+          image(inputNum1, 0, -15, 30, 30);
+      }
+      
+      
+    popMatrix();
+    
+    //update/draw meteors
+    for(int i = 0; i < meteors.size(); i++){
+      Meteor m = meteors.get(i);
+      if(m != selected) m.update();
+      
+      if(m.hitShip()){
+        lives++;
+        //GAME OVER
+         if(lives >= spaceships.length){
+           onScreen = Screen.GAMEOVER;
+         }else{
+           spaceShip = spaceships[lives];
+         }
+        if(m == selected){
+          selected = null;      
+        }
+        meteors.remove(i);
+      }
+    }
+    
     
     //draw input circle
     if(selected != null){
@@ -102,34 +134,8 @@ class Marathon implements Game{
     }else{
       shipAngle = atan2(mouseY-height/2, mouseX-width/2);
     }
+    if(selected != null)  selected.update();
     
-    //draw spaceship
-    
-    pushMatrix();
-      translate(width/2, height/2);
-      rotate(shipAngle + PI/2);
-      imageMode(CENTER);
-      image(spaceShip, 0, 0);
-    popMatrix();
-    
-    //update/draw meteors
-    for(int i = 0; i < meteors.size(); i++){
-      Meteor m = meteors.get(i);
-      m.update();
-      if(m.hitShip()){
-        lives++;
-        //GAME OVER
-         if(lives >= spaceships.length){
-           onScreen = Screen.GAMEOVER;
-         }else{
-           spaceShip = spaceships[lives];
-         }
-        if(m == selected){
-          selected = null;      
-        }
-        meteors.remove(i);
-      }
-    }
     
     //update/draw bullets
     for(int i = 0; i < bullets.size(); i++){
