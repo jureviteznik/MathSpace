@@ -7,7 +7,7 @@ enum Screen{
 Screen onScreen;
 
 String skinMap;
-String[] skins = {"scarab", "doodle","buzz","school","pokemon", "casino", "first"};
+String[] skins = {"scarab", "doodle","buzz","school","pokemon", "flowy", "casino", "first"};
 String[] modes = {"Marathon", "Sprint", "Turnado", "Twirl"};
 String[] modeDescription = {
     //marathon 
@@ -403,7 +403,7 @@ void mouseMenu(){
     try{
       skinMap = "Pics/" + skins[sel];
     }catch(Exception e){
-       skinMap = "Pics/casino";
+       //skinMap = "Pics/casino";
     }
     
     changeSkin();
@@ -425,32 +425,23 @@ void mouseMenu(){
       }else if(mouseX < 2*width/10){
         //SPRINT
         selectedModeX = width/10;
-        selectedRectX = width/10;
         gameMode = new Sprint();
         
       }else if(mouseX < 3*width/10){
         selectedModeX = 2*width/10;
-        selectedRectX = 2*width/10;
         gameMode = new Turnado();
         
       }else if(mouseX < 4*width/10){
         selectedModeX = 3*width/10;
-        selectedRectX = 3*width/10;
         gameMode = new Twirl();
       }else if(mouseX < 5*width/10){
-        selectedModeX = 4*width/10;
-        selectedRectX = 4*width/10;
+        //selectedModeX = 4*width/10;
        
       }
     }else{
       
     }
     
-    
-    if(mouseY < 5*height/6)  selectedRectY = 2*height/3;
-    else{
-      selectedRectY = 5*height/6;
-    }
     
   }
   
@@ -471,7 +462,7 @@ void mouseMenu(){
   
   //number selection
   mouseDistance = dist(mouseX, mouseY, 3*width/4, height/4);
-  if(mouseDistance <= stevilcnica.width/2){   
+  if(mouseDistance <= stevilcnica.width/2){ 
          float angle = atan2(mouseY-height/4, mouseX-3*width/4);
          
          if(angle > 0 && angle < PI/5){
