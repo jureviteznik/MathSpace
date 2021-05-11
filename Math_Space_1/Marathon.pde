@@ -6,7 +6,7 @@ class Marathon implements Game{
   //check meteor constructor for detail
   float aMax, aMin, rMax, rMin;
   
-  Marathon(){
+  public Marathon(){
     prevNumOfDestroied = 0;
     speed = 10000; //start with 10 seconds
     speedDecrese = 1000; // on level up decrese by 1 sec, 1 sec respawn time at level 10
@@ -20,7 +20,7 @@ class Marathon implements Game{
 
  
   public void drawGame(){
-    background(0);
+    background(background);
     fill(255);
     
     //spawn new meteors

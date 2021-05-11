@@ -1,13 +1,13 @@
 import processing.sound.*;
 
 enum Screen{
-    MENU, GAME, GAMEOVER
+    MENU, GAME, GAMEOVER, GAMEPAUSE
 };
 
 Screen onScreen;
 
 String skinMap;
-String[] skins = {"scarab", "doodle","buzz","school","pokemon", "flowy", "casino", "first"};
+String[] skins = {"scarab", "doodle","buzz","school","pokemon"};
 String[] modes = {"Marathon", "Sprint", "Turnado", "Twirl"};
 String[] modeDescription = {
     //marathon 
@@ -29,13 +29,15 @@ SoundFile backgroundMusic;
 SoundFile wrongSound;
 SoundFile correctSound;
 SoundFile shipHitSound;
+float musicVolume;
+HScrollbar volumeSlider;
 
 
 PImage[] spaceships = new PImage[3];
 PImage spaceShip;
 PImage inputNum1;
 PImage inputNum2;
-
+PImage background;
 PImage meteor;
 PImage stevilcnica;
 PImage select;
@@ -75,8 +77,6 @@ int meteorRadius;
 float mouseDistance;
 
 int initialTime;
-//spawn interval
-int interval;
 
 
 void setup(){
@@ -85,6 +85,8 @@ void setup(){
   background(0);
   
   onScreen = Screen.MENU;
+  
+  background = loadImage("Pics/background.png");
   
   skinMap = "Pics/scarab";
   gameMode = new Marathon();
@@ -96,10 +98,14 @@ void setup(){
   
   backgroundMusic = new SoundFile(this, "Sounds/background1.wav");
   backgroundMusic.loop();
+  musicVolume = 0.7;
+  volumeSlider = new HScrollbar(width/2, height - height/20, width/2, height/20, 1); 
+  backgroundMusic.amp(musicVolume);
   
   wrongSound = new SoundFile(this, "Sounds/wrong1.mp3");
   correctSound = new SoundFile(this, "Sounds/correct1.wav");
   shipHitSound = new SoundFile(this, "Sounds/shipHit1.wav");
+  
 
   
   meteors = new ArrayList<Meteor>();
@@ -123,7 +129,6 @@ void setup(){
   meteorRadius = meteor.height/2;
   
   initialTime = millis();
-  interval = 5000; //5 sec
 }
 
 void draw(){
@@ -140,6 +145,10 @@ void draw(){
       drawGameover();
       break;
     }
+    case GAMEPAUSE:{
+      drawGamepause();
+      break;
+    }
   }
 }
 
@@ -154,15 +163,45 @@ void mousePressed(){
       break;
     }
     case GAMEOVER:{
-      mouseGameover();
+      resetGame();
+      break;
+    }
+    case GAMEPAUSE:{
+      onScreen = Screen.GAME;
       break;
     }
   }
  
 }
 
+void keyPressed(){
+  switch(onScreen){
+    case MENU:{
+      break;
+    }
+    case GAME:{
+      if(key == ESC){
+        key = 0;
+        onScreen = Screen.GAMEPAUSE;
+      }
+      
+      break;
+    }
+    case GAMEOVER:{
+      break;
+    }
+    case GAMEPAUSE:{
+      if(key == ESC){
+        key = 0;
+        resetGame();
+      }
+      break;
+    }
+  }
+}
+
 public void drawGameover(){
-    background(0);
+    background(background);
     textSize(width/10);
     textAlign(CENTER, CENTER);
     text("GAME OVER", width/2 ,height/2);
@@ -170,12 +209,34 @@ public void drawGameover(){
     textSize(width/20);
     text("Correct: " + numOfDestroied, width/2 ,height - height/3);
     text("Wrong: " + numOfMissed, width/2 ,height - height/4);
+    //TODO ADD CLICK TO MENU
     
   };
 
+public void drawGamepause(){
+    background(background);
+    textSize(width/10);
+    textAlign(CENTER, CENTER);
+    text("PAUSE", width/2 ,height/2);
+    
+    textSize(width/20);
+    text("Mouse click to resume", width/2 ,height - height/3);
+    text("Press ESC to exit to menu", width/2 ,height - height/4);
+}
 
 void drawMenu(){
-  background(0);
+  background(background);
+  
+  //VOLUME
+  textAlign(LEFT, BOTTOM);
+  text("Volume:", width/2 + 5, height-height/14);
+  volumeSlider.update();
+  volumeSlider.display();
+  backgroundMusic.amp(volumeSlider.getVol());
+  wrongSound.amp(volumeSlider.getVol());
+  correctSound.amp(volumeSlider.getVol());
+  shipHitSound.amp(volumeSlider.getVol());
+  textAlign(CENTER, CENTER);
   
   shipAngle = atan2(mouseY-3*height/4, mouseX-3*width/4);
   
@@ -419,7 +480,6 @@ void mouseMenu(){
       if(mouseX < width/10){
         //MARATHON
         selectedModeX = 0;
-        selectedRectX = 0;
         gameMode = new Marathon();
         
       }else if(mouseX < 2*width/10){
@@ -569,16 +629,6 @@ void mouseMenu(){
   
 }
 
-void mouseGameover(){
-  numOfDestroied = 0;
-  numOfMissed = 0;
-  meteors = new ArrayList<Meteor>();
-  lives = 0;
-  spaceShip = spaceships[0];
-  onScreen = Screen.MENU;
-  
-}
-
 void mouseGame(){
   if(selected != null){
     mouseDistance = dist(mouseX, mouseY, selected.posx, selected.posy);
@@ -681,6 +731,23 @@ void mouseGame(){
   }
 }
 
+void resetGame(){
+  numOfDestroied = 0;
+  numOfMissed = 0;
+  meteors = new ArrayList<Meteor>();
+  lives = 0;
+  spaceShip = spaceships[0];
+  onScreen = Screen.MENU;
+  if(gameMode instanceof Marathon){
+    gameMode = new Marathon();
+  }else if(gameMode instanceof Sprint){
+    gameMode = new Sprint();
+  }else if(gameMode instanceof Turnado){
+    gameMode = new Turnado();
+  }else if(gameMode instanceof Twirl){
+    gameMode = new Twirl();
+  }
+}
 
 void changeSkin(){
   spaceships[0] = loadImage(skinMap+"/space_ship1.png");
@@ -703,4 +770,88 @@ void changeSkin(){
   osem = loadImage(skinMap+"/8.png");
   devet = loadImage(skinMap+"/9.png");
   
+}
+
+/*
+code from https://processing.org/examples/scrollbar.html
+used for a volume slider 
+*/
+class HScrollbar {
+  int swidth, sheight;    // width and height of bar
+  float xpos, ypos;       // x and y position of bar
+  float spos, newspos;    // x position of slider
+  float sposMin, sposMax; // max and min values of slider
+  int loose;              // how loose/heavy
+  boolean over;           // is the mouse over the slider?
+  boolean locked;
+  float ratio;
+
+  HScrollbar (float xp, float yp, int sw, int sh, int l) {
+    swidth = sw;
+    sheight = sh;
+    int widthtoheight = sw - sh;
+    ratio = (float)sw / (float)widthtoheight;
+    xpos = xp;
+    ypos = yp-sheight/2;
+    spos = xpos + swidth/2 - sheight/2;
+    newspos = spos;
+    sposMin = xpos;
+    sposMax = xpos + swidth - sheight;
+    loose = l;
+  }
+
+  void update() {
+    if (overEvent()) {
+      over = true;
+    } else {
+      over = false;
+    }
+    if (mousePressed && over) {
+      locked = true;
+    }
+    if (!mousePressed) {
+      locked = false;
+    }
+    if (locked) {
+      newspos = constrain(mouseX-sheight/2, sposMin, sposMax);
+    }
+    if (abs(newspos - spos) > 1) {
+      spos = spos + (newspos-spos)/loose;
+    }
+  }
+
+  float constrain(float val, float minv, float maxv) {
+    return min(max(val, minv), maxv);
+  }
+
+  boolean overEvent() {
+    if (mouseX > xpos && mouseX < xpos+swidth &&
+       mouseY > ypos && mouseY < ypos+sheight) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  void display() {
+    noStroke();
+    fill(204);
+    rect(xpos, ypos, swidth, sheight);
+    if (over || locked) {
+      fill(0, 0, 0);
+    } else {
+      fill(102, 102, 102);
+    }
+    rect(spos, ypos, sheight, sheight);
+  }
+
+  float getPos() {
+    // Convert spos to be values between
+    // 0 and the total width of the scrollbar
+    return spos * ratio;
+  }
+  
+  float getVol(){
+    return (spos / swidth) - 1;
+  }
 }

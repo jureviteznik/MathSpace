@@ -79,12 +79,12 @@ class Meteor{
     int fromWhere = (int)random(2);
     switch(fromWhere){
       case 1:{
-        radius = height/2 + meteor.height;
+        radius = height/2 + 100;
         angle = PI/2;
         break;
       }
       case 0:{
-        radius = height/2 + meteor.height;
+        radius = height/2 + 100;
         angle = -PI/2;
         break;
       }

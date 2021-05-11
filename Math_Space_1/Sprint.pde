@@ -6,7 +6,7 @@ class Sprint implements Game{
   //meteor speed increse when you destroy one
   float da, dr; 
   
-  Sprint(){
+  public Sprint(){
     aMax = 0.008;
     aMin = 0.002;
     rMax = 0.5;
@@ -19,7 +19,7 @@ class Sprint implements Game{
  
  
   public void drawGame(){
-    background(0);
+    background(background);
     fill(255);
     
     //spawn new meteors
