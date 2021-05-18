@@ -16,7 +16,7 @@ Depending on your OS click one of the links below. You will download a zip of th
 
 [Windows64][6]
 
-[MacOSX][7]
+[MacOSX *does not work*][7]
 
 [1]: https://github.com/jureviteznik/MathSpace/releases/download/1.0/MathSpace.linux-arm64.zip
 [2]: https://github.com/jureviteznik/MathSpace/releases/download/1.0/MathSpace.linux-armv6hf.zip
@@ -30,8 +30,9 @@ This game runs on JAVA. Without it the game wont work. In the case that you do n
 
 [Windows64-java][8]
 
-[MacOSX-java][9]
+[MacOSX-java *does not work*][9]
 
 [8]: https://github.com/jureviteznik/MathSpace/releases/download/1.0/MathSpace.windows64-java.zip
 [9]: https://github.com/jureviteznik/MathSpace/releases/download/1.0/MathSpace.macosx-java.zip
 
+The MacOS version does not work yet. The game is made and exported with processing3. MacOS folder stucture is very different from the windows and linux one so I have no idea where to put my own Pics and Sounds folder. If anyone finds a solution please let me know!
